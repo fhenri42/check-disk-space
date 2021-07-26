@@ -79,7 +79,14 @@ function checkDiskSpace(directoryPath: string, dependencies: Dependencies = {
 				return Promise.reject('cmd must contain at least one item')
 			}
 
-			dependencies.cpExecFile(file, args, (error, stdout) => {
+			const options = dependencies.platform === 'win32' ? {
+				env: {
+					...process.env,
+					PATH: `${process.env.SystemRoot}\\System32\\Wbem;${process.env.PATH}`,
+				},
+			} : null
+
+			dependencies.cpExecFile(file, args, options, (error, stdout) => {
 				if (error) {
 					reject(error)
 				}
