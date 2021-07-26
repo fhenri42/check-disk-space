@@ -1,19 +1,19 @@
-import {ChildProcess} from 'child_process'
+import {ChildProcess, ExecFileOptions} from 'child_process'
 import {EventEmitter} from 'events'
 import {normalize} from 'path'
 
-import Dependencies from '@/src/types/dependencies'
+import Dependencies, { CpExecFileCallback } from '@/src/types/dependencies'
 
 function mockDependencies(overrides?: Partial<Dependencies>, options?: {
 	cpExecFileOutput?: string
 	cpExecFileError?: Error
 }): Dependencies {
-	const dependencies: Dependencies = {
-		platform: 'linux',
-		fsExistsSync: () => true,
-		pathNormalize: normalize,
-		pathSep: '/',
-		cpExecFile: (cmd, args, callback) => {
+	function cpExecFile(cmd: string, args: ReadonlyArray<string> | undefined | null, option: ExecFileOptions | undefined | null, callback: CpExecFileCallback): ChildProcess;
+	function cpExecFile(cmd: string, args: ReadonlyArray<string> | undefined | null, callback: CpExecFileCallback): ChildProcess;
+	function cpExecFile(cmd: string, args: ReadonlyArray<string> | undefined | null, option: ExecFileOptions | CpExecFileCallback | undefined | null, possiblyCallback?: CpExecFileCallback) {
+		const callback = typeof option === 'function' ? option : possiblyCallback
+
+		if (callback) {
 			process.nextTick(() => {
 				if (options?.cpExecFileError !== undefined) {
 					callback(options.cpExecFileError, '', '')
@@ -21,9 +21,16 @@ function mockDependencies(overrides?: Partial<Dependencies>, options?: {
 
 				callback(null, options?.cpExecFileOutput ?? '', '')
 			})
+		}
+		return new EventEmitter() as ChildProcess
+	}
 
-			return new EventEmitter() as ChildProcess
-		},
+	const dependencies: Dependencies = {
+		platform: 'linux',
+		fsExistsSync: () => true,
+		pathNormalize: normalize,
+		pathSep: '/',
+		cpExecFile,
 		...overrides,
 	}
 

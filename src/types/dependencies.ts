@@ -1,13 +1,20 @@
-import {ChildProcess, ExecFileException} from 'child_process'
+import {ChildProcess, ExecFileException, ExecFileOptions} from 'child_process'
 import {existsSync} from 'fs'
 import {normalize, sep} from 'path'
+
+export interface CpExecFile {
+	(file: string, args: ReadonlyArray<string> | undefined | null, callback: CpExecFileCallback): ChildProcess
+  (file: string, args: ReadonlyArray<string> | undefined | null, options: ExecFileOptions | undefined | null, callback: CpExecFileCallback): ChildProcess
+}
+
+export type CpExecFileCallback = (error: ExecFileException | null, stdout: string, stderr: string) => void;
 
 type Dependencies = {
 	platform: NodeJS.Platform
 	fsExistsSync: typeof existsSync
 	pathNormalize: typeof normalize
 	pathSep: typeof sep
-	cpExecFile: (file: string, args: ReadonlyArray<string> | undefined | null, callback: (error: ExecFileException | null, stdout: string, stderr: string) => void) => ChildProcess
+	cpExecFile: CpExecFile
 }
 
 export default Dependencies

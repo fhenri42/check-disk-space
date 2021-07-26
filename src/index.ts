@@ -1,6 +1,7 @@
 import {execFile} from 'child_process'
 import {existsSync} from 'fs'
 import {normalize, sep} from 'path'
+import {promisify} from 'util'
 
 import InvalidPathError from '@/src/errors/invalidPathError'
 import NoMatchError from '@/src/errors/noMatchError'
@@ -21,6 +22,9 @@ function checkDiskSpace(directoryPath: string, dependencies: Dependencies = {
 	pathSep: sep,
 	cpExecFile: execFile,
 }): Promise<DiskSpace> {
+
+	const cpExecFile = promisify(dependencies.cpExecFile)
+
 	/**
 	 * Maps command output to a normalized object {diskPath, free, size}
 	 *
@@ -81,7 +85,7 @@ function checkDiskSpace(directoryPath: string, dependencies: Dependencies = {
 				}
 
 				try {
-					resolve(mapOutput(stdout, filter, mapping, coefficient))
+					resolve(mapOutput(stdout as string, filter, mapping, coefficient))
 				} catch (error2) {
 					reject(error2)
 				}
@@ -94,12 +98,16 @@ function checkDiskSpace(directoryPath: string, dependencies: Dependencies = {
 	 *
 	 * @param directoryPath - The file/folder path from where we want to know disk space
 	 */
-	function checkWin32(directoryPath: string): Promise<DiskSpace> {
+	async function checkWin32(directoryPath: string): Promise<DiskSpace> {
 		if (directoryPath.charAt(1) !== ':') {
 			return new Promise((resolve, reject) => {
 				reject(new InvalidPathError(`The following path is invalid (should be X:\\...): ${directoryPath}`))
 			})
 		}
+
+		// Some users have WMI disbled, so we attempt to run it before check
+		await cpExecFile('net', ['start', 'Windows Management Instrumentation']).catch(() => undefined)
+
 
 		return check(
 			['wmic', 'logicaldisk', 'get', 'size,freespace,caption'],
