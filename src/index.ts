@@ -23,8 +23,6 @@ function checkDiskSpace(directoryPath: string, dependencies: Dependencies = {
 	cpExecFile: execFile,
 }): Promise<DiskSpace> {
 
-	const cpExecFile = promisify(dependencies.cpExecFile)
-
 	/**
 	 * Maps command output to a normalized object {diskPath, free, size}
 	 *
@@ -112,8 +110,10 @@ function checkDiskSpace(directoryPath: string, dependencies: Dependencies = {
 			})
 		}
 
+		const cpExecFileAsync = promisify(dependencies.cpExecFile)
+
 		// Some users have WMI disbled, so we attempt to run it before check
-		await cpExecFile('net', ['start', 'Windows Management Instrumentation']).catch(() => undefined)
+		await cpExecFileAsync('net', ['start', 'Windows Management Instrumentation']).catch(() => undefined)
 
 
 		return check(
