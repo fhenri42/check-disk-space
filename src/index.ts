@@ -113,7 +113,7 @@ function checkDiskSpace(directoryPath: string, dependencies: Dependencies = {
 		const cpExecFileAsync = promisify(dependencies.cpExecFile)
 
 		// Some users have WMI disbled, so we attempt to run it before check
-		await cpExecFileAsync('net', ['start', 'Windows Management Instrumentation']).catch(() => undefined)
+		await cpExecFileAsync('net', ['start', 'winmgmt']).catch(() => undefined)
 
 
 		return check(
